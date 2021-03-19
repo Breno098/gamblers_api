@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Adm\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\Team;
-use App\Services\TeamService;
+use App\Models\Competition;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class TeamController extends Controller
+class CompetitionController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -20,12 +18,9 @@ class TeamController extends Controller
      */
     public function index()
     {
-        $teams = Team::orderBy('name')->get();
-        foreach ($teams as $team) {
-            $team->country;
-        }
+        $competitons =  Competition::where('active', 1)->orderBy('name')->get();
         return $this->send([
-            'teams' => $teams
+            'competitons' => $competitons
         ]);
     }
 
@@ -35,33 +30,25 @@ class TeamController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, TeamService $teamService)
+    public function store(Request $request)
     {
         $data = $request->all();
 
         $validator = Validator::make($data, [
-            'name' => 'required|max:255',
-            'country_id' => 'required|int',
-            'photo' => 'required|image'
+            'name' => 'required',
+            'season' => 'required'
         ]);
 
         if($validator->fails()){
             return $this->sendErrorValidation($validator->errors());
         }
 
-        $name_photo = Carbon::now()->format('YmdHis') . $request->file('photo')->getClientOriginalName();
+        $data['active'] = 1;
 
-        if(!$request->file('photo')->storeAs('teams', $name_photo)){
-            return $this->sendErrorUploadImage();
-        }
+        $competiton = Competition::create($data);
 
-        $data['name_photo'] = $name_photo;
-        $team = Team::create($data);
-        $team->competitions()->sync($request->competitions);
-
-        $teamService->createPlayerGoalAgainst($team);
         return $this->send([
-            'team' => $team,
+            'competiton' => $competiton,
             'message' => 'Created successfully'
         ]);
     }
@@ -69,13 +56,13 @@ class TeamController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Team  $team
+     * @param  \App\Models\Competition  $competiton
      * @return \Illuminate\Http\Response
      */
-    public function show(Team $team)
+    public function show(Competition $competiton)
     {
         return $this->send([
-            'team' => $team,
+            'competiton' => $competiton,
         ]);
     }
 
@@ -83,16 +70,15 @@ class TeamController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Team  $team
+     * @param  \App\Models\Competition  $competiton
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Team $team)
+    public function update(Request $request, Competition $competiton)
     {
-        $team->update($request->all());
-        $team->competitions()->sync($request->competitions);
+        $competiton->update($request->all());
 
         return $this->send([
-            'team' => $team,
+            'competiton' => $competiton,
             'message' => 'Updated successfully'
         ]);
     }
@@ -100,22 +86,17 @@ class TeamController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Team  $team
+     * @param  \App\Models\Competition  $competiton
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Team $team)
+    public function destroy(Competition $competiton)
     {
         try {
-            $competitions = $team->competitions;
-            $team->competitions()->sync([]);
-            $team->delete();
-
+            $competiton->delete();
             return $this->send([
                 'message' => "Deleted successfully"
             ]);
         } catch(\Exception $e){
-            $team->competitions()->sync($competitions);
-
             return $this->sendError([
                 'message' => $e->getCode() === '23000' ? "Dependency error" : $e->getMessage(),
                 'code' => $e->getCode()
@@ -128,10 +109,10 @@ class TeamController extends Controller
      * Method: POST
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Team  $team
+     * @param  \App\Models\Competition  $competiton
      * @return \Illuminate\Http\Response
      */
-    public function updateWithImage(Request $request, Team $team)
+    public function updateWithImage(Request $request, Competition $competiton)
     {
         $data = $request->all();
 
@@ -140,20 +121,21 @@ class TeamController extends Controller
         if($name_photo){
             $data['name_photo'] = $name_photo;
 
-            if(!$request->file('photo')->storeAs('teams', $name_photo)){
-                return $this->sendErrorUploadImage();
+            if(!$request->file('photo')->storeAs('competiton', $name_photo)){
+                return $this->sendError([
+                    "message" => 'Upload image failed'
+                ]);
             }
 
-            if(Storage::exists('teams/' . $team->name_photo)){
-                Storage::delete('teams/' . $team->name_photo);
+            if(Storage::exists('competiton/' . $competiton->name_photo)){
+                Storage::delete('competiton/' . $competiton->name_photo);
             }
         }
 
-        $team->update($data);
-        $team->competitions()->sync($request->competitions);
+        $competiton->update($data);
 
         return $this->send([
-            'team' => $team,
+            'team' => $competiton,
             'message' => 'Updated successfully'
         ]);
     }

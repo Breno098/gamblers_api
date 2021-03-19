@@ -29,4 +29,12 @@ class Controller extends BaseController
         $send['message'] = 'Validation error.';
         return response(new ApiResource($send), 400);
     }
+
+    public function sendErrorUploadImage()
+    {
+        $send['error'] = [
+            'Upload image failed'
+        ];
+        return response(new ApiResource($send), 400);
+    }
 }
