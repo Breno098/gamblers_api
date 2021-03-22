@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Adm\API\CompetitionController;
-use App\Http\Controllers\Adm\API\CountryController;
-use App\Http\Controllers\Adm\API\GameController;
-use App\Http\Controllers\Adm\API\PlayerController;
-use App\Http\Controllers\Adm\API\StadiumController;
-use App\Http\Controllers\Adm\API\TeamController;
+use App\Http\Controllers\API\Adm\CompetitionController;
+use App\Http\Controllers\API\Adm\CountryController;
+use App\Http\Controllers\API\Adm\GameController;
+use App\Http\Controllers\API\Adm\PlayerController;
+use App\Http\Controllers\API\Adm\StadiumController;
+use App\Http\Controllers\API\Adm\TeamController;
 use App\Http\Controllers\API\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -29,13 +29,12 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 
-
 Route::middleware('auth:api')->group(function () {
     Route::middleware('user.adm')->group(function () {
         Route::apiResource('game', GameController::class);
         Route::apiResource('team', TeamController::class);
-        Route::apiResource('country', CountryController::class);
         Route::apiResource('player', PlayerController::class);
+        Route::apiResource('country', CountryController::class);
         Route::apiResource('stadium', StadiumController::class);
         Route::apiResource('competition', CompetitionController::class);
 
